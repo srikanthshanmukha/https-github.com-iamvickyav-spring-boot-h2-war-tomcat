@@ -1,3 +1,6 @@
+parameters {
+  choice choices: ['dev', 'qa', 'prod'], description: 'select environment', name: 'Env'
+}
 pipeline {
     agent any
     tools {
@@ -16,49 +19,38 @@ pipeline {
                 checkout scm
             }
         }
-        stage("Check Code Health") {
+        stage('Build and deploy to development') {
             when {
-                not {
-                    anyOf {
-                        branch 'master';
-                        branch 'develop'
-                    }
+                expression { 
+                   return params.ENVIRONMENT == 'dev'
                 }
-           }
-           steps {
-               sh "mvn clean compile"
-            }
-        }
-        stage("Run Test cases") {
-            when {
-                branch 'develop';
-            }
-           steps {
-               sh "mvn clean test"
-            }
-        }
-        stage("Check Code coverage") {
-            when {
-                branch 'develop'
             }
             steps {
-               jacoco(
-                    execPattern: '**/target/**.exec',
-                    classPattern: '**/target/classes',
-                    sourcePattern: '**/src',
-                    inclusionPattern: 'com/iamvickyav/**',
-                    changeBuildStatus: true,
-                    minimumInstructionCoverage: '30',
-                    maximumInstructionCoverage: '80')
-           }
-        }
-        stage("Build & Deploy Code") {
+                    sh "mvn package"
+                    sh "mvn tomcat7:deploy"
+                }
+            }
+         stage('Build and deploy to QA') {
             when {
-                branch 'master'
+                expression { 
+                   return params.ENVIRONMENT == 'qa'
+                }
             }
             steps {
-                sh "mvn tomcat7:deploy"
+                    sh "mvn package"
+                    sh "mvn tomcat7:deploy"
+                }
+            }
+          stage('Build and deploy to Production') {
+            when {
+                expression { 
+                   return params.ENVIRONMENT == 'prod'
+                }
+            }
+            steps {
+                    sh "mvn package"
+                    sh "mvn tomcat7:deploy"
+                }
             }
         }
     }
- }
