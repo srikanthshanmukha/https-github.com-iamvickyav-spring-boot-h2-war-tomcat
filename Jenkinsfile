@@ -34,7 +34,7 @@ pipeline {
         stage('Deploy') {
             agent any
             when {
-                expression { env.BRANCH_NAME == 'develop' }
+                expression { env.BRANCH_NAME == 'develop*' }
             }
 
             steps {
